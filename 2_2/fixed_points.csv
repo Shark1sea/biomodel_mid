@@ -1,0 +1,8 @@
+assignment,states,h1,h2,h3,G1,G2,G3,stable,eigs
+002,inactive|inactive|saturated,0.5,0.25,3.125,0,0,1,True,0.0;0.0;0.0
+020,inactive|saturated|inactive,0.5,3.25,0.125,0,1,0,True,0.0;0.0;0.0
+022,inactive|saturated|saturated,-0.5,2.25,2.125,0,1,1,True,0.0;0.0;0.0
+111,linear|linear|linear,1.1875,1.3125,1.375,0.1875,0.3125,0.375,False,3.0;3.0;0.0
+200,saturated|inactive|inactive,3.5,0.25,0.125,1,0,0,True,0.0;0.0;0.0
+202,saturated|inactive|saturated,2.5,-0.75,2.125,1,0,1,True,0.0;0.0;0.0
+220,saturated|saturated|inactive,2.5,2.25,-0.875,1,1,0,True,0.0;0.0;0.0
