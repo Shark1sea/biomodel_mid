@@ -7,4 +7,30 @@ wheels/
 *.egg-info
 
 # Virtual environments
-.venv
+.venv/
+.env/
+venv/
+ENV/
+
+# Jupyter notebooks
+.ipynb_checkpoints/
+
+# Logs and cache
+*.log
+.cache/
+.pytest_cache/
+.coverage
+
+# OS files
+Thumbs.db
+.DS_Store
+
+# UV / pip caches
+.uv/
+pip-wheel-metadata/
+
+# VS Code
+.vscode/
+
+# Matplotlib figures (optional)
+phase_portrait.png
