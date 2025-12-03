@@ -43,9 +43,9 @@ def q1():
 	- 发放与重置：v > v_peak 触发；v = c_reset；u += d_reset
 	图片保存路径：1_1/q1.png
 	"""
-	sim_time=1000*ms, 
-	ext_rate=100*Hz, 
-	dt=0.05*ms
+	sim_time = 1000*ms
+	ext_rate = 100*Hz
+	dt = 0.05*ms
 
 	# 设置全局时间步长
 	b2.defaultclock.dt = dt
@@ -82,8 +82,8 @@ def q1():
 	ax.plot(t, M.v[0] / mV, color='steelblue')
 	ax.axhline(float(v_peak/mV), color='r', ls='--', lw=1, label='v_peak')
 	for st in SmG.t/ms:
-		ax.axvline(st, color='yellow', ls='--', lw=1.0, alpha=0.9, zorder=10)
-	ax.axvline(-1, color='yellow', ls='--', lw=1.0, alpha=0.9, label='脉冲', zorder=10)
+		ax.axvline(st, color='tab:orange', ls='--', lw=1.5, alpha=0.95, zorder=10)
+	ax.axvline(-1, color='tab:orange', ls='--', lw=1.5, alpha=0.95, label='脉冲', zorder=10)
 	ax.set_xlim(0.0, float(sim_time/ms))
 	ax.set_ylabel('膜电压 v (mV)')
 	ax.set_xlabel('时间 (ms)')
