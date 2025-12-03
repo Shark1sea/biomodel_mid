@@ -39,6 +39,30 @@ def g_arr(h):
         )
     )
 
+def g_prime(h):
+    """分段导数 g'(h)：用于雅可比与稳定性分析"""
+    if h < -0.2:
+        return 0.0
+    elif h < 0.2:
+        return 0.5
+    elif h < 0.8:
+        return 1.0
+    elif h < 1.2:
+        return 0.5
+    else:
+        return 0.0
+
+def jacobian(h_vec):
+    """在状态 h 处的雅可比矩阵 J(h)"""
+    h1, h2 = h_vec
+    gp1 = g_prime(h1)
+    gp2 = g_prime(h2)
+    j11 = -1.0 + (wEE - alpha) * gp1
+    j12 = -alpha * gp2
+    j21 = -alpha * gp1
+    j22 = -1.0 + (wEE - alpha) * gp2
+    return np.array([[j11, j12], [j21, j22]])
+
 def rhs(h_vec):
     """系统右端：dh/dt = f(h)"""
     h1, h2 = h_vec
@@ -70,6 +94,26 @@ for s in sols:
     print(s)
 
 # ----------------------
+# 1.1 固定点稳定性分类
+# ----------------------
+def classify_equilibrium(h_vec):
+    J = jacobian(h_vec)
+    eigvals = np.linalg.eigvals(J)
+    if np.all(np.real(eigvals) < 0):
+        cls = 'stable'
+    elif np.any(np.real(eigvals) > 0) and np.any(np.real(eigvals) < 0):
+        cls = 'saddle'
+    else:
+        cls = 'unstable'
+    return cls, eigvals
+
+classes = []
+for s in sols:
+    cls, eigs = classify_equilibrium(s)
+    classes.append((s, cls, eigs))
+    print(f"平衡点 {s} -> {cls}, 特征值: {eigs}")
+
+# ----------------------
 # 2. 画零斜线与相图
 # ----------------------
 # 网格范围与分辨率（可调大以获得更平滑的等高线）
@@ -88,17 +132,22 @@ plt.figure(figsize=(7, 6))
 cs1 = plt.contour(H1, H2, DH1, levels=[0.0], colors='C0', linewidths=1.5)
 cs2 = plt.contour(H1, H2, DH2, levels=[0.0], colors='C1', linestyles='--', linewidths=1.5)
 
-# 向量场箭头（略微降低密度：调大抽稀步长）
+# 向量场箭头
 step = max(20, N // 20)
 plt.quiver(H1[::step, ::step], H2[::step, ::step],
            DH1[::step, ::step], DH2[::step, ::step],
            angles='xy')
 
-# 平衡点用点标出来
-for s in sols:
-    plt.plot(s[0], s[1], 'o')
-    plt.text(s[0] + 0.03, s[1] + 0.03,
-             f'({s[0]:.2f}, {s[1]:.2f})')
+# 平衡点用不同标记/颜色显示稳定性
+marker_styles = {
+    'stable': dict(marker='o', color='green'),
+    'saddle': dict(marker='o', color='C7'),
+    'unstable': dict(marker='o', color='red'),
+}
+for s, cls, eigs in classes:
+    style = marker_styles.get(cls, dict(marker='o', color='black'))
+    plt.plot(s[0], s[1], linestyle='None', **style)
+    plt.text(s[0] + 0.03, s[1] + 0.03, f'({s[0]:.2f}, {s[1]:.2f})')
 
 plt.xlabel(r'$h_1$')
 plt.ylabel(r'$h_2$')
@@ -107,6 +156,9 @@ plt.title('Nullclines and phase portrait')
 legend_handles = [
     Line2D([0], [0], color='C0', lw=1.5, label=r'$dh_1/dt=0$'),
     Line2D([0], [0], color='C1', lw=1.5, linestyle='--', label=r'$dh_2/dt=0$'),
+    Line2D([0], [0], marker='o', color='green', linestyle='None', label='stable'),
+    Line2D([0], [0], marker='o', color='C7', linestyle='None', label='saddle'),
+    Line2D([0], [0], marker='o', color='red', linestyle='None', label='unstable'),
 ]
 plt.legend(handles=legend_handles)
 plt.axis('equal')
