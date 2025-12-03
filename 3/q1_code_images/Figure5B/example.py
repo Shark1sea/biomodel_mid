@@ -3,11 +3,11 @@ from collections import OrderedDict
 from brian2 import *
 
 #=========================================================================================
-# Equations
+# 方程组
 #=========================================================================================
 
-# sAMPA, x, sNMDA, sGABA are synaptic conductances stored pre-synatically
-# S_AMPA, S_NMDA, S_GABA are synaptic conductances stored post-synaptically
+# sAMPA, x, sNMDA, sGABA 是突触前导通率变量
+# S_AMPA, S_NMDA, S_GABA 是突触后导通率变量
 equations = dict(
     E = '''
     dV/dt         = (-(V - V_L) - Isyn/gE) / tau_m_E : volt (unless refractory)
@@ -41,34 +41,34 @@ equations = dict(
     )
 
 #=========================================================================================
-# Parameters
+# 参数
 #=========================================================================================
 
 modelparams = dict(
-    # Common LIF
+    # 通用 LIF 参数
     V_L    = -70*mV,
     Vth    = -50*mV,
     Vreset = -55*mV,
 
-    # Excitatory LIF
+    # 兴奋性 LIF 参数
     gE        = 25*nS,
     tau_m_E   = 20*ms,
     tau_ref_E = 2*ms,
 
-    # Inhibitory LIF
+    # 抑制性 LIF 参数
     gI        = 20*nS,
     tau_m_I   = 10*ms,
     tau_ref_I = 1*ms,
 
-    # Reversal potentials
+    # 反转电位
     V_E = 0*mV,
     V_I = -70*mV,
 
-    # NMDA nonlinearity
+    # NMDA 非线性
     a = 0.062*mV**-1,
     b = 3.57,
 
-    # Synaptic time constants
+    # 突触时间常数
     tauAMPA = 2*ms,
     tau_x   = 2*ms,
     tauNMDA = 100*ms,
@@ -76,36 +76,36 @@ modelparams = dict(
     tauGABA = 5*ms,
     delay   = 0.5*ms,
 
-    # External synaptic conductances
+    # 外部突触导通率（输入）
     gAMPA_ext_E = 2.1*nS,
     gAMPA_ext_I = 1.62*nS,
 
-    # Unscaled recurrent synaptic conductances (onto excitatory)
+    # 未缩放的递归突触导通率（投向兴奋性）
     gAMPA_E = 80*nS,
     gNMDA_E = 264*nS,
     gGABA_E = 520*nS,
 
-    # Unscaled recurrent synaptic conductances (onto inhibitory)
+    # 未缩放的递归突触导通率（投向抑制性）
     gAMPA_I = 64*nS,
     gNMDA_I = 208*nS,
     gGABA_I = 400*nS,
 
-    # Background noise
+    # 背景噪声
     nu_ext = 2.4*kHz,
 
-    # Number of neurons
+    # 神经元数量
     N_E = 1600,
     N_I = 400,
 
-    # Fraction of selective neurons
+    # 选择性神经元比例
     fsel = 0.15,
 
-    # Hebb-strengthened weight
+    # Hebb 增强权重
     wp = 1.7
     )
 
 #=========================================================================================
-# Model
+# 模型
 #=========================================================================================
 
 class Stimulus(object):
@@ -135,25 +135,25 @@ class Stimulus(object):
 class Model(object):
     def __init__(self, modelparams, stimulus, T):
         #---------------------------------------------------------------------------------
-        # Complete the model specification
+        # 完成模型规格
         #---------------------------------------------------------------------------------
 
         # Model parameters
         params = modelparams.copy()
 
-        # Rescale conductances by number of neurons
+        # 按神经元数量缩放导通率
         for par in ['gAMPA_E', 'gAMPA_I', 'gNMDA_E', 'gNMDA_I']:
             params[par] /= params['N_E']
         for par in ['gGABA_E', 'gGABA_I']:
             params[par] /= params['N_I']
 
-        # Make local variables for convenience
+        # 创建局部变量便于使用
         N_E   = params['N_E']
         fsel  = params['fsel']
         wp    = params['wp']
         delay = params['delay']
 
-        # Subpopulation size
+        # 子群规模
         N1 = int(fsel*N_E)
         N2 = N1
         N0 = N_E - (N1 + N2)
@@ -161,11 +161,11 @@ class Model(object):
         params['N1'] = N1
         params['N2'] = N2
 
-        # Hebb-weakened weight
+        # Hebb 减弱权重
         wm = (1 - wp*fsel)/(1 - fsel)
         params['wm'] = wm
 
-        # Synaptic weights between populations
+        # 群体间突触权重矩阵
         self.W = np.asarray([
             [1,  1,  1],
             [wm, wp, wm],
@@ -173,13 +173,13 @@ class Model(object):
             ])
 
         #---------------------------------------------------------------------------------
-        # Neuron populations
+        # 神经元群体
         #---------------------------------------------------------------------------------
 
-        net = OrderedDict() # Network objects
-        exc = OrderedDict() # Excitatory subpopulations
+        net = OrderedDict() # 网络对象
+        exc = OrderedDict() # 兴奋性子群
 
-        # E/I populations
+        # E/I 群体
         for label in ['E', 'I']:
             net[label] = NeuronGroup(params['N_'+label],
                                      equations[label],
@@ -189,13 +189,13 @@ class Model(object):
                                      refractory=params['tau_ref_'+label],
                                      namespace=params)
 
-        # Excitatory subpopulations
+        # 兴奋性子群划分
         exc[0] = net['E'][:params['N0']]
         exc[1] = net['E'][params['N0']:params['N0'] + params['N1']]
         exc[2] = net['E'][params['N0'] + params['N1']:]
 
         #---------------------------------------------------------------------------------
-        # Background input (post-synaptic)
+        # 背景输入（突触后）
         #---------------------------------------------------------------------------------
 
         for label in ['E', 'I']:
@@ -205,10 +205,10 @@ class Model(object):
             net['ic'+label].connect(condition='i == j')
 
         #---------------------------------------------------------------------------------
-        # Recurrent input
+        # 递归输入
         #---------------------------------------------------------------------------------
 
-        # Change pre-synaptic variables
+        # 修改突触前变量（事件触发）
         net['icAMPA'] = Synapses(net['E'], net['E'], on_pre='sAMPA += 1', delay=delay)
         net['icAMPA'].connect(condition='i == j')
         net['icNMDA'] = Synapses(net['E'], net['E'], on_pre='x += 1', delay=delay)
@@ -216,7 +216,7 @@ class Model(object):
         net['icGABA'] = Synapses(net['I'], net['I'], on_pre='sGABA += 1', delay=delay)
         net['icGABA'].connect(condition='i == j')
 
-        # Link pre-synaptic variables to post-synaptic variables
+        # 将突触前变量映射到突触后变量
         @network_operation(when='start')
         def recurrent_input():
             # AMPA
@@ -237,7 +237,7 @@ class Model(object):
             self.net['I'].S_GABA = S
 
         #---------------------------------------------------------------------------------
-        # External input (post-synaptic)
+        # 外部输入（突触后）
         #---------------------------------------------------------------------------------
 
         global s1
@@ -251,7 +251,7 @@ class Model(object):
             net['ic'+str(ind)].connect(condition='i == j')
 
         #---------------------------------------------------------------------------------
-        # Record spikes
+        # 记录脉冲
         #---------------------------------------------------------------------------------
 
         mons = OrderedDict()
@@ -259,7 +259,7 @@ class Model(object):
             mons['spikes'+label] = SpikeMonitor(net[label], record=True)
 
         #---------------------------------------------------------------------------------
-        # Setup
+        # 设置与封装
         #---------------------------------------------------------------------------------
 
         self.params = params
@@ -267,25 +267,25 @@ class Model(object):
         self.exc    = exc
         self.mons   = mons
 
-        # Add network objects and monitors to NetworkOperation's contained_objects
+        # 将网络对象与监视器加入 NetworkOperation 的 contained_objects
         self.contained_objects = list(self.net.values()) + list(self.mons.values())
         self.contained_objects.extend([recurrent_input])
 
     def reinit(self):
-        # Randomly initialize membrane potentials
+        # 随机初始化膜电位
         for label in ['E', 'I']:
             self.net[label].V = np.random.uniform(self.params['Vreset'],
                                                   self.params['Vth'],
                                                   size=self.params['N_'+label]) * volt
             
-        # Set synaptic variables to zero
+        # 将突触变量置零
         for par in ['sAMPA_ext', 'sAMPA', 'x', 'sNMDA']:
             setattr(self.net['E'], par, 0)
         for par in ['sAMPA_ext', 'sGABA']:
             setattr(self.net['I'], par, 0)
 
 #=========================================================================================
-# Simulation
+# 仿真
 #=========================================================================================
 
 class Simulation(object):
@@ -297,20 +297,20 @@ class Simulation(object):
         self.network  = Network(self.model.contained_objects)
 
     def run(self, T, randseed=1):
-        # Initialize random number generator
+        # 初始化随机数发生器
         seed(randseed)
 
-        # Initialize and run
+        # 初始化并运行
         self.model.reinit()
         self.network.run(T, report='text')
 
     def savespikes(self, filename_exc, filename_inh):
-        print("Saving excitatory spike times to " + filename_exc)
+        print("保存兴奋性脉冲时间到 " + filename_exc)
         data_exc = np.column_stack((self.model.mons['spikesE'].i, self.model.mons['spikesE'].t))
         np.savetxt(filename_exc, data_exc, fmt='%-9d %25.18e',
                    header='{:<8} {:<25}'.format('Neuron', 'Time (s)'))
 
-        print("Saving inhibitory spike times to " + filename_inh)
+        print("保存抑制性脉冲时间到 " + filename_inh)
         data_inh = np.column_stack((self.model.mons['spikesI'].i, self.model.mons['spikesI'].t))
         np.savetxt(filename_inh, data_inh, fmt='%-9d %25.18e',
                    header='{:<8} {:<25}'.format('Neuron', 'Time (s)'))
@@ -336,10 +336,10 @@ if __name__ == '__main__':
     sim.savespikes('spikesE.txt', 'spikesI.txt')
 
     #-------------------------------------------------------------------------------------
-    # Spike raster plot
+    # 光栅图绘制
     #-------------------------------------------------------------------------------------
 
-    # Load excitatory spikes
+    # 载入兴奋性脉冲
     spikes, = sim.loadspikes('spikesE.txt')
 
     import matplotlib.pyplot as plt
@@ -350,5 +350,5 @@ if __name__ == '__main__':
     plt.xlabel('Time (s)')
     plt.ylabel('Neuron index')
 
-    print("Saving raster plot to wang2002.pdf")
+    print("保存光栅图到 wang2002.pdf")
     plt.savefig('wang2002.pdf')

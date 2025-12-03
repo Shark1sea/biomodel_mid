@@ -6,14 +6,14 @@ import example
 import multiprocessing
 import time
 
-# Use numpy target
+# 使用 numpy 作为代码生成目标（避免 Cython 编译）
 prefs.codegen.target = "numpy"
 
 
 def reproduce_figure_3a():
     print("Generating Figure 3A (Zero Coherence Dynamics)...")
     
-    # 0% coherence, 1s stimulus
+    # 0% 相干度，刺激时长 1 秒
     stimparams = dict(
         Ton  = 0.5*second,
         Toff = 1.5*second,
@@ -26,23 +26,23 @@ def reproduce_figure_3a():
     
     sim = example.Simulation(example.modelparams, stimparams, sim_dt, T)
     
-    # Seed 12346 -> B wins, 64321 -> A wins
+    # 随机种子说明：12346 -> B 获胜，64321 -> A 获胜
     sim.run(T, randseed=12346) 
     
     spikesE = sim.model.mons['spikesE']
     spikesI = sim.model.mons['spikesI']
     
-    # Define populations
+    # 定义各子群规模
     N_E = example.modelparams['N_E']
     fsel = example.modelparams['fsel']
     N1 = int(fsel * N_E)
     N0 = N_E - 2 * N1
     
-    # Get spike times
+    # 获取两选择群组的脉冲时间
     times_A = spikesE.t[np.logical_and(spikesE.i >= N0, spikesE.i < N0 + N1)]
     times_B = spikesE.t[np.logical_and(spikesE.i >= N0 + N1, spikesE.i < N_E)]
     
-    # Calculate firing rates (50ms window)
+    # 计算发放率（50ms 滑窗）
     def get_rate(spike_times, num_neurons, duration, bin_width=0.05):
         bins = np.arange(0, duration/second + bin_width, bin_width)
         hist, _ = np.histogram(spike_times/second, bins)
@@ -53,7 +53,7 @@ def reproduce_figure_3a():
     t_bins, rate_A = get_rate(times_A, N1, T, bin_width=0.05)
     _, rate_B = get_rate(times_B, N1, T, bin_width=0.05)
     
-    # Determine winner based on late delay period activity
+    # 根据延迟期后段的平均发放率判定赢家
     delay_period_mask = t_bins > 1.5
     
     if np.any(delay_period_mask):
@@ -70,23 +70,23 @@ def reproduce_figure_3a():
         save_filename = 'Figure3A_Re_B_win.png'
         print(f"Outcome: Group B wins (Rate B: {mean_rate_B:.2f} Hz > Rate A: {mean_rate_A:.2f} Hz)")
     
-    # Plotting
+    # 绘图
     fig, axes = plt.subplots(4, 1, figsize=(6, 10), sharex=True)
     
-    # 1. Raster
+    # 1. 光栅图（抽样展示）
     sample_indices = np.arange(N0, N_E, 5) 
     mask = np.isin(spikesE.i, sample_indices)
     axes[0].plot(spikesE.t[mask], spikesE.i[mask], '.', markersize=1, color='k')
     axes[0].set_ylabel('Neuron Index')
     axes[0].set_title('Raster Plot (Trial 1)')
     
-    # 2. Firing Rates
+    # 2. 群体发放率
     axes[1].plot(t_bins, rate_A, 'r', label='Group A')
     axes[1].plot(t_bins, rate_B, 'b', label='Group B')
     axes[1].set_ylabel('Firing Rate (Hz)')
     axes[1].legend(loc='upper left')
     
-    # 3. Inputs
+    # 3. 输入（含可视化噪声）
     t_array = np.arange(0, T/second + 0.05, 0.05)
     stim = example.Stimulus(stimparams['Ton'], stimparams['Toff'], stimparams['mu0'], stimparams['coh'])
     
@@ -102,7 +102,7 @@ def reproduce_figure_3a():
     axes[2].step(t_array, input_B/Hz, 'b', alpha=0.5, label='Input B')
     axes[2].set_ylabel('Input Rate (Hz)')
     
-    # 4. Time Integral
+    # 4. 输入时间积分
     dt_bin = 0.05 
     integral_A = np.cumsum(input_A/Hz) * dt_bin
     integral_B = np.cumsum(input_B/Hz) * dt_bin

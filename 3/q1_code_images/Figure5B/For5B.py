@@ -5,12 +5,12 @@ from brian2 import *
 import multiprocessing
 import time
 
-# 避免 Cython 编译警告
+# 使用 numpy 作为代码生成目标（避免 Cython 编译）
 prefs.codegen.target = "numpy"
 
 def reproduce_figure_3a():
     import example
-    print("Generating Figure 3A (Zero Coherence Dynamics)...")
+    print("生成 Figure 3A（零相干度动力学）...")
     
     stimparams = dict(Ton=0.5*second, Toff=1.5*second, mu0=40*Hz, coh=0.0)
     sim_dt = 0.1*ms
@@ -177,13 +177,13 @@ def reproduce_figure_5b_final():
             # 0.05ms精度更高
             tasks.append((coh, seed, stimparams, example.modelparams, 0.05*ms, 2.0*second, i))
             
-    # 并行运行
+    # 并行运行试验
     pool = multiprocessing.Pool(processes=multiprocessing.cpu_count()-1)
     results_raw = pool.map(run_single_trial_task, tasks)
     pool.close()
     pool.join()
     
-    print("Simulations complete. Analyzing data...")
+    print("模拟完成，开始分析数据...")
     
     data_by_coh = {c: {'correct': 0, 'total': 0, 'rts': []} for c in coherences}
     
@@ -192,7 +192,7 @@ def reproduce_figure_5b_final():
         task_coh = tasks[i][0]
         times_A, times_B, N_sub, t_id = res
         
-        # 阈值设为15Hz
+        # 阈值设为 15Hz
         choice, rt = analyze_trial_robust((times_A, times_B), 
                                           stim_onset=0.5, 
                                           threshold=15.0, 
@@ -222,7 +222,7 @@ def reproduce_figure_5b_final():
     # 绘制图像
     fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(12, 5))
     
-    # 1. 神经测量函数 (准确率)
+    # 1. 神经测量函数（准确率）
     ax1.plot(coherences, final_acc, 'o-', color='k', markerfacecolor='k')
     ax1.set_xscale('log')
     ax1.set_xticks([3.2, 6.4, 12.8, 25.6, 51.2])
@@ -234,12 +234,12 @@ def reproduce_figure_5b_final():
     ax1.set_title('Neurometric Function')
     ax1.grid(True, which='both', linestyle='--', alpha=0.3)
 
-    # 2. 计时函数 (反应时)
+    # 2. 计时函数（反应时）
     ax2.errorbar(coherences, final_rt, yerr=final_rt_err, fmt='o-', color='k', capsize=5)
     ax2.set_xscale('log')
     ax2.set_xticks([3.2, 6.4, 12.8, 25.6, 51.2])
     ax2.get_xaxis().set_major_formatter(matplotlib.ticker.ScalarFormatter())
-    # 设定Y轴范围
+    # 设定 Y 轴范围
     ax2.set_ylim(0, 1000) 
     ax2.set_xlabel('Coherence (%)')
     ax2.set_ylabel('Reaction Time (ms)')
