@@ -2,6 +2,11 @@
 
 这是一个课程作业，由小组成员共同完成。
 
+## 仓库地址
+
+- <https://github.com/Shark1sea/biomodel_mid>
+- <https://gitee.com/Shark1sea/biomodel_mid>
+
 ## 运行方式
 
 ### 运行环境
